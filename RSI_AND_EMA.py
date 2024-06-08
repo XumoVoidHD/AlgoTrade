@@ -67,8 +67,6 @@ for symbol in company_list.keys():
     company_data[symbol]['Average Downward Movement'] = [0.0] * length
     company_data[symbol]['Relative Strength'] = [0.0] * length
     company_data[symbol]['RSI'] = [0.0] * length
-    upward = []
-    downward = []
 
     for i in range(1, length):
         pre = float(company_data[symbol].at[i-1, 'Close'])
