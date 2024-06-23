@@ -10,9 +10,6 @@ import json
 import time
 import hmac
 import hashlib
-
-
-
 # client = Client(api_key, api_secret, testnet=True)
 # tickers = client.get_all_tickers()
 # tickers = pd.DataFrame(tickers)
@@ -91,6 +88,18 @@ class Broker:
         response = requests.post(self.url + self.api_call, headers=headers, params=params)
         return response
 
+    def get_quantity(self, symbol=None):
+        api_call = "/fapi/v2/positionRisk"
+        params = {
+            'timestamp': self.get_server_time()
+        }
+
+        response = self.get_response(api_call=api_call, params=params)
+        data_list = response.json()
+        data_dict = {item['symbol']: item for item in data_list}
+
+        return data_dict[symbol]['positionAmt']
+
     def positions(self, pos="BTCUSDT"):
         # api_call = '/fapi/v2/account'
         # headers = {'X-MBX-APIKEY': api_key}
@@ -164,24 +173,28 @@ class Broker:
 
         return response
 
-    def close_pos(self, symbol):
+    def close_pos(self, symbol, quantity=None):
         api_call = "/fapi/v1/order"
         timestamp = self.get_server_time()
         params = {
             'symbol': symbol,
             'side': 'SELL',
-            'type': 'STOP_MARKET',
+            'type': 'MARKET',
             'timestamp': timestamp,
-            'closePosition': True,
-            'stopprice': 29000
-            # 'quantity': quantity,
+            # 'closePosition': True,
+            # 'stopprice': 29000
             # 'timeInForce': timeInForce,
             # 'price': price,
             # 'stopPrice': stopPrice
         }
+        if quantity is None:
+            params['quantity'] = self.get_quantity(symbol)
+        else:
+            params['quantity'] = quantity
         response = self.post_response(api_call=api_call, params=params)
 
         return response
+
 
 
 # x = client.get_server_time()
@@ -195,10 +208,11 @@ if __name__ == "__main__":
     api_secret = "96eb5cda871fb203cd9b082830b2c264acdbd5822c1873d86db5d7149009666d"
 
     wrap = Broker(api_key, api_secret)
-    print(wrap.place_order(symbol='BTCUSDT',side='BUY', type='MARKET', quantity=0.01).json())
+    print(wrap.place_order(symbol='BTCUSDT',side='BUY', type='MARKET', quantity=0.02).json())
     # print(wrap.get_asset("BTCUSDT"))
-    df = pd.DataFrame(wrap.get_klines("BTCUSDT").json())
-    print(df)
+    # df = pd.DataFrame(wrap.get_klines("BTCUSDT").json())
+    # print(df)
     print(wrap.close_pos("BTCUSDT").json())
+    #print(wrap.get_quantity("BTCUSDT"))
 
 
